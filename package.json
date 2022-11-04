@@ -1,0 +1,34 @@
+{
+  "name": "linkedin-boost",
+  "type": "module",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www",
+    "pup": "nodemon puppeteer/index.js",
+    "update-db": "node ./database/syncDatabase"
+  },
+  "dependencies": {
+    "compression": "~1.7.4",
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "dotenv": "16.0.3",
+    "express": "~4.18.2",
+    "helmet": "~6.0.0",
+    "http-errors": "~1.6.3",
+    "morgan": "~1.9.1",
+    "pg": "8.8.0",
+    "pg-hstore": "2.3.4",
+    "puppeteer": "^19.2.2",
+    "puppeteer-extra": "^3.3.4",
+    "puppeteer-extra-plugin-adblocker": "^2.13.5",
+    "puppeteer-extra-plugin-anonymize-ua": "^2.4.4",
+    "puppeteer-extra-plugin-recaptcha": "^3.6.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.1",
+    "sequelize": "~6.24.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20",
+    "prettier": "^2.7.1"
+  }
+}
