@@ -2,14 +2,6 @@ import { extractEmailsAndNames, getEmail } from "../controllers/email.js";
 import { delay, hashData } from "../utils.js";
 import { cachedData } from "../cachedData.js";
 
-//query
-//?q=site%3Alinkedin.com+%22software+engineer%22+%40gmail.com+United+States
-
-const PAGE_RESULT_CLASS = ".v7W49e";
-const NEXT_PAGE_ID = "#pnnext";
-
-// const GOOGLE_URL = "http://localhost:3000/search";
-
 const professions = [
   '"software engineer"',
   '"developer"',
@@ -46,23 +38,31 @@ const buildQueries = () => {
     .flat(Infinity);
 };
 
-//10 20 40 50 100
-const RESULTS_PER_PAGES = 100;
-// const QUERY = encodeURIComponent(
-('site:linkedin.com "software engineer" "@gmail.com" United States');
+// NUM could be: 10 20 40 50 100
+// const GOOGLE_URL = "https://www.google.com/search"
+const GOOGLE_URL = "http://localhost:3000/search";
+const PAGE_RESULT_CLASS = ".v7W49e";
+const NEXT_PAGE_ID = "#pnnext";
 
-const NO_FILTERS = 0;
-const GOOGLE_URL = `https://www.google.com/search?q=${QUERY}&filter=${NO_FILTERS}&num=${RESULTS_PER_PAGES}`;
+const googleUrl = ({
+  url = GOOGLE_URL,
+  query,
+  noFilters = 0,
+  resultsPerPage = 100,
+}) => `${url}?q=${query}&filter=${noFilters}&num=${resultsPerPage}`;
 
 const { hashedEmails } = cachedData;
 
-const email = async (
+const email = async ({
   page,
+  pageNumber = 0,
+  newEmails = 0,
   goTo,
   globalTimeout = 2000,
-  MAX_DATA = 500,
-  randomTimeout = true
-) => {
+  maxData = 500,
+  randomTimeout = true,
+}) => {
+  console.log("URL", goTo);
   await page.goto(goTo);
   await page.waitForNavigation({ timeout: globalTimeout }).catch((err) => err);
   const _timeout = () =>
@@ -96,12 +96,12 @@ const email = async (
 
     emails.push(...emailsFromPage);
     await page.click(NEXT_PAGE_ID);
-    cachedData.PAGE += 1;
+    pageNumber += 1;
     await page
       .waitForNavigation({ timeout: globalTimeout })
       .catch((err) => err);
 
-    console.log("PAGE:", cachedData.PAGE);
+    console.log("PAGE:", pageNumber);
     console.log("EMAILS FOUND IN THAT PAGE:", _emailsFromPage.length);
     console.log(
       "EMAILS FOUND IN THAT PAGE NOT DUPLICATED:",
@@ -109,21 +109,21 @@ const email = async (
     );
     console.log("TOTAL EMAILS SCRAPPED SO FAR:", emails.length);
 
-    cachedData.newEmails += emailsFromPage.length;
-    const stale = cachedData.newEmails / cachedData.PAGE;
+    newEmails += emailsFromPage.length;
+    const stale = newEmails / pageNumber;
     console.log("Stale", stale);
-
-    if (stale < 0.52 && cachedData.PAGE > 20) return emails;
+    //return to 20
+    if (stale < 0.52 && pageNumber > 5) return emails;
     const _timeout =
       emails.length % 100 === 0 && emails.length !== 0 ? 10000 : void 0;
-    if (emails.length < MAX_DATA) return locateEmails(emails);
+    if (emails.length < maxData) return locateEmails(emails);
     return emails;
   };
 
   const startScrapper = () => {
     const emails = [];
     return locateEmails(emails).catch((e) => {
-      console.log("Error", e);
+      console.log("Error", e.message);
       return emails;
     });
   };
@@ -132,16 +132,21 @@ const email = async (
 
 const startQuery = async ({ browser, iterator, oldPage, data = [] }) => {
   const queriesIterator = iterator || buildQueries()[Symbol.iterator]();
-  const { value: goTo, done } = queriesIterator.next();
-  const newPage = browser.newPage();
+  const { value: query, done } = queriesIterator.next();
+  const newPage = await browser.newPage();
 
-  if (!done) return;
+  if (done) return data;
 
   await delay(10000);
   oldPage?.close();
-  data.concat(await email(newPage, goTo));
+  data.concat(await email({ page: newPage, goTo: googleUrl({ query }) }));
 
-  return startQuery({ oldPage: newPage, browser, iterator: queriesIterator });
+  return startQuery({
+    oldPage: newPage,
+    browser,
+    iterator: queriesIterator,
+    data,
+  });
 };
 
 export { email, startQuery };
