@@ -101,19 +101,20 @@ const email = async ({
       .waitForNavigation({ timeout: globalTimeout })
       .catch((err) => err);
 
-    console.log("PAGE:", pageNumber);
-    console.log("EMAILS FOUND IN THAT PAGE:", _emailsFromPage.length);
     console.log(
-      "EMAILS FOUND IN THAT PAGE NOT DUPLICATED:",
-      emailsFromPage.length
+      "Page n.:",
+      pageNumber,
+      "Emails found:",
+      _emailsFromPage.length,
+      "Emails (not duplicated):",
+      emailsFromPage.length,
+      "Total scraped so far:",
+      emails.length
     );
-    console.log("TOTAL EMAILS SCRAPPED SO FAR:", emails.length);
 
     newEmails += emailsFromPage.length;
     const stale = newEmails / pageNumber;
-    console.log("Stale", stale);
-    //return to 20
-    if (stale < 0.52 && pageNumber > 5) return emails;
+    if (stale < 0.52 && pageNumber > 20) return emails;
     const _timeout =
       emails.length % 100 === 0 && emails.length !== 0 ? 10000 : void 0;
     if (emails.length < maxData) return locateEmails(emails);
