@@ -1,6 +1,7 @@
 const cachedData = {
-  pages: 0,
+  PAGE: 0,
   hashedEmails: {},
+  newEmails: 0,
 };
 
 export { cachedData };

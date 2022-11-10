@@ -8,7 +8,11 @@ const hashData = (data) => {
     hash = (hash << 5) - hash + chr;
     hash |= 0; // Convert to 32bit integer
   }
-  return hash;
+  return hash.toString();
 };
 
-export { hashData };
+const delay = (ms) => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
+export { hashData, delay };
