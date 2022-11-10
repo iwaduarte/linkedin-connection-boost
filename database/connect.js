@@ -24,7 +24,7 @@ const sequelize = new Sequelize(
     minifyAliases: true,
     benchmark: true,
     // in production, you would want to set this to false
-    logging: console.log,
+    logging: false,
   }
 );
 
