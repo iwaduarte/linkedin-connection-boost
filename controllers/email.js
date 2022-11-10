@@ -1,13 +1,15 @@
 import SequelizeObject from "../database/connect.js";
 
 const { models } = SequelizeObject;
-const { Email } = models;
+const { EmailList } = models;
 
-const getAllEmails = () => Email.findAll();
-const getEmail = (id) => Email.findByPK(id);
-const createEmail = (body) => Email.create(body);
-const updateEmail = (id, body) => Email.update(body, { where: { id } });
-const deleteEmail = (id) => Email.destroy({ where: { id } });
+const getAllEmails = () => EmailList.findAll();
+const getEmail = (opts) => EmailList.findOne(opts);
+const createEmail = (body) => EmailList.create(body);
+const updateEmail = (id, body) => EmailList.update(body, { where: { id } });
+const deleteEmail = (id) => EmailList.destroy({ where: { id } });
+const createEmails = (data) =>
+  EmailList.bulkCreate(data, { individualHooks: true, validate: true });
 
 const extractEmailsAndNames = (
   pageResultsClass,
@@ -21,10 +23,14 @@ const extractEmailsAndNames = (
   return HTMLElements.reduce((acc, element) => {
     const innerText = element?.querySelector(nameSelector)?.innerText;
 
-    const name = innerText?.split(/[-(]/)[0]?.trim();
+    const [firstName, secondName] = innerText
+      ?.split(/[-(]/)[0]
+      ?.trim()
+      .split(/\s/);
+    const name = `${firstName} ${secondName}`;
 
     const searchEmailRegex = new RegExp(
-      String.raw`([a-z0-9._-]*${emailDomain})`,
+      String.raw`([a-z0-9._-]+${emailDomain})`,
       "gi"
     );
     const [emailOnTitle] = innerText?.match(searchEmailRegex) || [];
@@ -42,6 +48,7 @@ export {
   getEmail,
   getAllEmails,
   createEmail,
+  createEmails,
   updateEmail,
   deleteEmail,
   extractEmailsAndNames,
