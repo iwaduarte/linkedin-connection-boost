@@ -31,7 +31,7 @@ const savedEmails = JSON.parse(
 
 savedEmails?.length &&
   (await createEmails(savedEmails).catch((err) => {
-    console.log(err);
+    console.log("Error creating files from 'email.list': ", err.message);
     return [];
   }));
 savedEmails?.forEach(
