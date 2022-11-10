@@ -23,7 +23,7 @@ const extractEmailsAndNames = (
   return HTMLElements.reduce((acc, element) => {
     const innerText = element?.querySelector(nameSelector)?.innerText;
 
-    const [firstName, secondName] = innerText
+    const [firstName = "Unnamed", secondName = ""] = innerText
       ?.split(/[-(]/)[0]
       ?.trim()
       .split(/\s/);
@@ -36,7 +36,7 @@ const extractEmailsAndNames = (
     const [emailOnTitle] = innerText?.match(searchEmailRegex) || [];
     const [email] = emailOnTitle
       ? [emailOnTitle]
-      : Array.from(element?.querySelectorAll(emailSelector))
+      : Array.from(element?.querySelectorAll(emailSelector) || [])
           .find((span) => span.innerText.includes(emailDomain))
           ?.innerText?.match(searchEmailRegex) || [];
     if (email) acc.push({ name, email });
