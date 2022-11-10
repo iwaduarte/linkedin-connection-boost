@@ -1,3 +1,5 @@
+import { hashData } from "../../utils.js";
+
 const EmailList = (sequelize, DataTypes) => {
   const _Email = sequelize.define(
     "EmailList",
@@ -44,19 +46,9 @@ const EmailList = (sequelize, DataTypes) => {
       if (data[key] === "") {
         Object.assign(data, { [key]: null });
       }
-    });
-  });
-
-  _Email.beforeCreate(async (data) => {
-    const email = await hashData(data.password);
-    Object.assign(data, { email });
-  });
-
-  _Email.beforeUpdate(async (data) => {
-    if (data.email && data.changed("email")) {
-      const emailHashed = await hashData(data.email);
+      const emailHashed = hashData(data.email);
       Object.assign(data, { emailHashed });
-    }
+    });
   });
 
   _Email.associate = (models) => {
