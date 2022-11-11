@@ -1,6 +1,5 @@
 import express from "express";
 import {
-  createEmail,
   getEmail,
   getAllEmails,
   updateEmail,
@@ -26,7 +25,7 @@ router.post("/", async (req, res) => {
     name: "Bob",
   };
   const { body } = req;
-  return res.json(await createEmail(body || user));
+  return res.json(body);
 });
 
 router.put("/:id", async (req, res) => {
