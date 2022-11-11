@@ -1,46 +1,14 @@
-import { extractEmailsAndNames, getEmail } from "../controllers/email.js";
+import {
+  extractEmailsAndNames,
+  findOrCreateEmail,
+} from "../controllers/email.js";
 import { delay, hashData } from "../utils.js";
 import { cachedData } from "../cachedData.js";
-
-const professions = [
-  '"software engineer"',
-  '"developer"',
-  '"full stack"',
-  '"recruiter"',
-  '"CTO"',
-  '"CEO"',
-];
-const emails = ['"@gmail.com"'];
-const countries = [
-  "United States",
-  "Canada",
-  "Brasil",
-  "United Kingdom",
-  "Australia",
-  "Germany",
-];
-const site = ["site:linkedin.com"];
-
-const buildQueries = () => {
-  //cache build
-  return professions
-    .map((profession) => {
-      return countries.map((country) => {
-        return emails.map((email) => {
-          return site.map((site) =>
-            encodeURIComponent(
-              `${site} ${profession} ${email} ${country}`
-            ).replace(/\%20/g, "+")
-          );
-        });
-      });
-    }, [])
-    .flat(Infinity);
-};
+import { buildQueries } from "../queries.js";
 
 // NUM could be: 10 20 40 50 100
-// const GOOGLE_URL = "https://www.google.com/search"
-const GOOGLE_URL = "http://localhost:3000/search";
+const GOOGLE_URL = "https://www.google.com/search";
+// const GOOGLE_URL = "http://localhost:3000/search";
 const PAGE_RESULT_CLASS = ".v7W49e";
 const NEXT_PAGE_ID = "#pnnext";
 
@@ -53,7 +21,7 @@ const googleUrl = ({
 
 const { hashedEmails } = cachedData;
 
-const email = async ({
+const scrapeEmailsPuppeteer = async ({
   page,
   pageNumber = 0,
   newEmails = 0,
@@ -72,34 +40,37 @@ const email = async ({
 
   const locateEmails = async (emails, timeout = _timeout()) => {
     await delay(timeout);
-    await page.waitForSelector(PAGE_RESULT_CLASS);
-    const _emailsFromPage = await page.evaluate(
-      extractEmailsAndNames,
-      PAGE_RESULT_CLASS
-    );
+    await page.waitForSelector(PAGE_RESULT_CLASS, { timeout: 0 });
+
+    const _emailsFromPage = await page
+      .evaluate(extractEmailsAndNames, PAGE_RESULT_CLASS)
+      .catch((err) => {
+        console.log(`[Evaluate]`, err.message);
+        return [];
+      });
+
     const emailsFromPage = await _emailsFromPage.reduce(
       async (acc, emailObject) => {
         const { email } = emailObject || {};
-        const _acc = await acc;
         const emailHashed = hashData(email);
-        const duplicateEmail =
-          hashedEmails[emailHashed] ||
-          (await getEmail({ where: { emailHashed }, attributes: ["id"] }));
+        const [, created] = hashedEmails[emailHashed]
+          ? [null, false]
+          : await findOrCreateEmail({
+              where: { emailHashed },
+              defaults: emailObject,
+            });
 
-        !duplicateEmail && _acc.push(emailObject);
-        hashedEmails[emailHashed] = true;
-
-        return _acc;
+        if (created) {
+          hashedEmails[emailHashed] = true;
+          acc.then((_acc) => _acc.push([email, created]));
+        }
+        return acc;
       },
-      []
+      Promise.resolve([])
     );
 
     emails.push(...emailsFromPage);
-    await page.click(NEXT_PAGE_ID);
     pageNumber += 1;
-    await page
-      .waitForNavigation({ timeout: globalTimeout })
-      .catch((err) => err);
 
     console.log(
       "Page n.:",
@@ -111,12 +82,28 @@ const email = async ({
       "Total scraped so far:",
       emails.length
     );
-
     newEmails += emailsFromPage.length;
     const stale = newEmails / pageNumber;
-    if (stale < 0.52 && pageNumber > 20) return emails;
-    const _timeout =
-      emails.length % 100 === 0 && emails.length !== 0 ? 10000 : void 0;
+
+    const [endOfPage] = await page
+      .click(NEXT_PAGE_ID)
+      .then(() => [])
+      .catch((e) => {
+        console.log("Page click", e.message);
+        return [true];
+      });
+
+    await page
+      .waitForNavigation({ timeout: globalTimeout })
+      .catch((err) => err);
+
+    if (endOfPage) return emails;
+
+    if (stale < 0.52 && pageNumber > 20) {
+      console.log(`Staled Results`);
+      return emails;
+    }
+
     if (emails.length < maxData) return locateEmails(emails);
     return emails;
   };
@@ -124,7 +111,7 @@ const email = async ({
   const startScrapper = () => {
     const emails = [];
     return locateEmails(emails).catch((e) => {
-      console.log("Error", e.message);
+      console.log("[locateEmails] Error", e.message);
       return emails;
     });
   };
@@ -132,15 +119,21 @@ const email = async ({
 };
 
 const startQuery = async ({ browser, iterator, oldPage, data = [] }) => {
-  const queriesIterator = iterator || buildQueries()[Symbol.iterator]();
+  if (!cachedData?.queries?.length) {
+    cachedData.queries = buildQueries();
+  }
+  const queries = cachedData?.queries?.slice(0, 5);
+  const queriesIterator = iterator || queries[Symbol.iterator]();
+
   const { value: query, done } = queriesIterator.next();
   const newPage = await browser.newPage();
 
   if (done) return data;
-
-  await delay(10000);
   oldPage?.close();
-  data.concat(await email({ page: newPage, goTo: googleUrl({ query }) }));
+  data.concat(
+    await scrapeEmailsPuppeteer({ page: newPage, goTo: googleUrl({ query }) })
+  );
+  await delay(30000);
 
   return startQuery({
     oldPage: newPage,
@@ -150,4 +143,4 @@ const startQuery = async ({ browser, iterator, oldPage, data = [] }) => {
   });
 };
 
-export { email, startQuery };
+export { scrapeEmailsPuppeteer, startQuery };
