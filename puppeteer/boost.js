@@ -27,6 +27,11 @@ const connect = () => {
     }
 
     console.log("allConnections", allConnections[i]);
+    const titleModal = document.getElementById("send-invite-modal")?.innerText;
+    if (titleModal?.includes("How do you know")) {
+      document.querySelector('[aria-label="Other"]')?.click();
+      document.querySelector('[aria-label="Connect"]')?.click();
+    }
     allConnections[i].click();
     await new Promise((r) => setTimeout(r, 300));
     const sendInvite = document.querySelector('[aria-label="Send now"]');
