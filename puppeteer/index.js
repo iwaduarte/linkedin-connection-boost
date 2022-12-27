@@ -5,7 +5,7 @@ import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import AdBlockerPlugin from "puppeteer-extra-plugin-adblocker";
 import AnonymizeUA from "puppeteer-extra-plugin-anonymize-ua";
 import RecaptchaPlugin from "puppeteer-extra-plugin-recaptcha";
-import { startQuery } from "./scrapeEmailsPuppeteer.js";
+import { startQuery } from "./scrapeEmails.js";
 import { cachedData } from "../cachedData.js";
 import { hashData } from "../utils.js";
 
