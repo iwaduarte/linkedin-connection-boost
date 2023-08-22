@@ -1,5 +1,5 @@
 const cachedData = {
-  hashedEmails: {},
+  existentEmails: {},
   queries: [],
 };
 
