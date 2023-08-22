@@ -2,7 +2,7 @@ import {
   extractEmailsAndNames,
   findOrCreateEmail,
 } from "../controllers/email.js";
-import { delay, hashData } from "../utils.js";
+import utils from "../utils.js";
 import { cachedData } from "../cachedData.js";
 import { buildQueries } from "../queries.js";
 
@@ -11,6 +11,7 @@ const GOOGLE_URL = "https://www.google.com/search";
 // const GOOGLE_URL = "http://localhost:3000/search";
 const PAGE_RESULT_CLASS = ".v7W49e";
 const NEXT_PAGE_ID = "#pnnext";
+const { delay, hashData, ...extraUtils } = utils;
 
 const googleUrl = ({
   url = GOOGLE_URL,
@@ -19,18 +20,12 @@ const googleUrl = ({
   resultsPerPage = 100,
 }) => `${url}?q=${query}&filter=${noFilters}&num=${resultsPerPage}`;
 
-const { hashedEmails } = cachedData;
-
-const _timeout = (randomTimeout = true, globalTimeout) =>
-  randomTimeout
-    ? (Math.floor(Math.random() * 5) + 1) * globalTimeout
-    : globalTimeout;
+const { existentEmails } = cachedData;
 
 const saveNewEmails = (emails = []) =>
   emails.reduce(async (acc, emailObject) => {
-    const { email } = emailObject || {};
-    const emailHashed = hashData(email);
-    const [, created] = hashedEmails[emailHashed]
+    const { email, emailHashed } = emailObject || {};
+    const [, created] = existentEmails[email]
       ? [null, false]
       : await findOrCreateEmail({
           where: { emailHashed },
@@ -38,7 +33,7 @@ const saveNewEmails = (emails = []) =>
         });
 
     if (created) {
-      hashedEmails[emailHashed] = true;
+      existentEmails[email] = true;
       acc.then((_acc) => _acc.push([email, created]));
     }
     return acc;
@@ -46,17 +41,15 @@ const saveNewEmails = (emails = []) =>
 
 const locateAndCreateEmails = async ({
   emails,
-  timeout,
   globalTimeout,
   page,
   pageNumber,
   allNewEmails,
   maxData,
 }) => {
-  await delay(timeout);
   await page.waitForSelector(PAGE_RESULT_CLASS, { timeout: 0 });
   const allEmailsFromPage = await page
-    .evaluate(extractEmailsAndNames, PAGE_RESULT_CLASS)
+    .evaluate(extractEmailsAndNames, PAGE_RESULT_CLASS, extraUtils)
     .catch((err) => {
       console.log(`[Evaluate]`, err.message);
       return [];
@@ -80,6 +73,7 @@ const locateAndCreateEmails = async ({
   const _allNewEmails = allNewEmails + newEmailsFromPage.length;
   const stale = _allNewEmails / pageNumber;
 
+  await delay(globalTimeout);
   const [endOfPage] = await page
     .click(NEXT_PAGE_ID)
     .then(() => [])
@@ -100,24 +94,23 @@ const locateAndCreateEmails = async ({
   if (emails.length < maxData)
     return locateAndCreateEmails({
       emails,
-      timeout,
       globalTimeout,
       page,
       pageNumber: newPageNumber,
       allNewEmails: _allNewEmails,
       maxData,
     });
+
   return emails;
 };
 
-const scrapeEmails = async ({
+const google = async ({
   page,
   pageNumber = 0,
   allNewEmails = 0,
   goTo,
-  globalTimeout = 2000,
+  globalTimeout = 4000,
   maxData = 500,
-  randomTimeout = true,
 }) => {
   console.log("URL", goTo);
   await page.goto(goTo);
@@ -126,7 +119,6 @@ const scrapeEmails = async ({
   const emails = [];
   return locateAndCreateEmails({
     emails,
-    timeout: _timeout(randomTimeout, globalTimeout),
     pageNumber,
     allNewEmails,
     globalTimeout,
@@ -138,29 +130,27 @@ const scrapeEmails = async ({
   });
 };
 
-const startQuery = async ({ browser, iterator, oldPage, data = [] }) => {
+const queryEmails = async ({ browser, iterator, oldPage }) => {
   if (!cachedData?.queries?.length) {
     cachedData.queries = buildQueries();
   }
   const queries = cachedData?.queries?.slice(0, 5);
   const queriesIterator = iterator || queries[Symbol.iterator]();
-
   const { value: query, done } = queriesIterator.next();
+
+  if (done) return true;
+
+  // every new query should be behind a different incognito proxy
+  await oldPage?.close();
   const newPage = await browser.newPage();
+  await google({ goTo: googleUrl({ query }), page: newPage });
+  await delay(120000);
 
-  if (done) return data;
-  oldPage?.close();
-  data.concat(
-    await scrapeEmails({ page: newPage, goTo: googleUrl({ query }) })
-  );
-  await delay(30000);
-
-  return startQuery({
+  return queryEmails({
     oldPage: newPage,
     browser,
     iterator: queriesIterator,
-    data,
   });
 };
 
-export { scrapeEmails, startQuery };
+export { google, queryEmails };
