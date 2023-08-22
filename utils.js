@@ -10,9 +10,8 @@ const hashData = (data) => {
   }
   return hash.toString();
 };
-const delay = (ms) => {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-};
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const emailRegex = (emailDomain) =>
   new RegExp(String.raw`([a-z0-9._-]+${emailDomain})`, "gi");
 
@@ -24,4 +23,7 @@ const stripNameFromText = (text) => {
   return `${firstName} ${secondName}`;
 };
 
+const utils = { hashData, delay, emailRegex, stripNameFromText };
+
+export default utils;
 export { hashData, delay, emailRegex, stripNameFromText };
