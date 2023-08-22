@@ -1,24 +1,22 @@
 #!/usr/bin/env node
 
 import dotenv from "dotenv";
-dotenv.config();
-import app from '../app.js';
-import debugFactory from 'debug';
-import http from 'http'; 
-
+dotenv.config({ path: "../.env" });
+import app from "../app.js";
+import debugFactory from "debug";
+import http from "http";
 
 const { DEBUG } = process.env;
 debugFactory.enable(DEBUG);
-const debug= debugFactory('linkedin-boost:server');
+const debug = debugFactory("linkedin-boost:server");
 
 /** Normalize a port into a number, string, or false. */
 const normalizePort = (val) => {
-    const port = parseInt(val, 10);
-    if (!isNaN(port) && port>=0)
-        return port;
+  const port = parseInt(val, 10);
+  if (!isNaN(port) && port >= 0) return port;
 
-    return false;
-}
+  return false;
+};
 
 /** Get port from environment and store in Express. */
 const port = normalizePort(process.env.PORT) || 3000;
@@ -27,45 +25,40 @@ const port = normalizePort(process.env.PORT) || 3000;
  * Event listener for HTTP server "error" event.
  */
 const onError = (error) => {
-    if (error.syscall !== 'listen') {
-        throw error;
-    }
+  if (error.syscall !== "listen") {
+    throw error;
+  }
 
-    const bind = typeof port === 'string'
-        ? 'Pipe ' + port
-        : 'Port ' + port;
+  const bind = typeof port === "string" ? "Pipe " + port : "Port " + port;
 
-    // handle specific listen errors with friendly messages
-    switch (error.code) {
-        case 'EACCES':
-            console.error(bind + ' requires elevated privileges');
-            process.exit(1);
-            break;
-        case 'EADDRINUSE':
-            console.error(bind + ' is already in use');
-            process.exit(1);
-            break;
-        default:
-            throw error;
-    }
-}
+  // handle specific listen errors with friendly messages
+  switch (error.code) {
+    case "EACCES":
+      console.error(bind + " requires elevated privileges");
+      process.exit(1);
+      break;
+    case "EADDRINUSE":
+      console.error(bind + " is already in use");
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+};
 
 /**
  * Event listener for HTTP server "listening" event.
  */
 const onListening = () => {
-    const addr = server.address();
-    const bind = typeof addr === 'string'
-        ? 'pipe ' + addr
-        : 'port ' + addr.port;
-    debug('Listening on ' + bind);
+  const addr = server.address();
+  const bind = typeof addr === "string" ? "pipe " + addr : "port " + addr.port;
+  debug("Listening on " + bind);
 };
-
 
 /**
  * Get port from environment and store in Express.
  */
-app.set('port', port);
+app.set("port", port);
 
 /**
  * Create HTTP server.
@@ -78,5 +71,5 @@ const server = http.createServer(app);
  */
 
 server.listen(port);
-server.on('error', onError);
-server.on('listening', onListening);
+server.on("error", onError);
+server.on("listening", onListening);
