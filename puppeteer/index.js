@@ -5,9 +5,9 @@ import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import AdBlockerPlugin from "puppeteer-extra-plugin-adblocker";
 import AnonymizeUA from "puppeteer-extra-plugin-anonymize-ua";
 import RecaptchaPlugin from "puppeteer-extra-plugin-recaptcha";
-import { startQuery } from "./scrapeEmails.js";
+import { queryEmails } from "./google.js";
 import { cachedData } from "../cachedData.js";
-import { hashData } from "../utils.js";
+import { getAllEmails } from "../controllers/email.js";
 
 puppeteer.use(StealthPlugin());
 puppeteer.use(AdBlockerPlugin({ blockTrackers: true }));
@@ -23,17 +23,12 @@ const browser = await puppeteer.launch({
   executablePath: executablePath(),
 });
 
-const savedEmails = JSON.parse(
-  await fs.readFile("emails.list", "utf8").catch(() => "[]")
-);
-
-savedEmails?.forEach(
-  ({ email }) => (cachedData.hashedEmails[hashData(email)] = true)
+(await getAllEmails().catch((e) => [])).forEach(
+  ({ email }) => (cachedData.existentEmails[email] = true)
 );
 
 // create proxy request
 // 1-
 
-const allEmails = await startQuery({ browser });
-await fs.writeFile("emails.list", JSON.stringify(allEmails, null, 2));
+await queryEmails({ browser });
 await browser.close();
