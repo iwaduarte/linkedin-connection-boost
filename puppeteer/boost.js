@@ -7,8 +7,10 @@ const SEARCH_BUTTON = "";
 const { USERNAME, PASSWORD } = process.env;
 
 const connect = () => {
+  const configuration = { interval: null };
   let i = 0;
   let count = 0;
+  const stopOperation = () => clearInterval(configuration.interval);
   const getAllConnections = () =>
     Array.from(
       document.querySelectorAll('[id*="ember"] > span.artdeco-button__text')
@@ -16,7 +18,7 @@ const connect = () => {
 
   let allConnections = getAllConnections();
 
-  const interval = setInterval(async () => {
+  configuration.interval = setInterval(async () => {
     scroll(0, document.body.clientHeight);
     if (i + 1 > allConnections.length) {
       document.querySelector('[aria-label="Next"]')?.click();
@@ -35,16 +37,20 @@ const connect = () => {
     allConnections[i].click();
     await new Promise((r) => setTimeout(r, 300));
     const sendInvite = document.querySelector('[aria-label="Send now"]');
-    if (sendInvite.disabled)
+    if (sendInvite?.disabled)
       document.querySelector('[aria-label="Dismiss"]').click();
     else sendInvite?.click();
 
     i++;
     count++;
     console.log("Connect: ", count);
-  }, 1400);
 
-  const stopOperation = () => clearInterval(interval);
+    const limitReached = () =>
+      document
+        .querySelector("#ip-fuse-limit-alert__header")
+        ?.innerText.includes("invitation limit");
+    if (limitReached()) stopOperation();
+  }, 1400);
 };
 
 const naiveBoost = async (page) => {
