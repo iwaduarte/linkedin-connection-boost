@@ -15,7 +15,6 @@ puppeteer.use(AnonymizeUA());
 // puppeteer.use(RecaptchaPlugin());
 
 const { executablePath } = _puppeteer;
-const fs = _fs.promises;
 
 const browser = await puppeteer.launch({
   headless: false,
@@ -23,7 +22,7 @@ const browser = await puppeteer.launch({
   executablePath: executablePath(),
 });
 
-(await getAllEmails().catch((e) => [])).forEach(
+(await getAllEmails().catch(() => [])).forEach(
   ({ email }) => (cachedData.existentEmails[email] = true)
 );
 
