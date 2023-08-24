@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import dotenv from "dotenv";
-dotenv.config({ path: "../.env" });
+dotenv.config();
 import app from "../app.js";
 import debugFactory from "debug";
 import http from "http";
