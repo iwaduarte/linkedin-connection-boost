@@ -1,0 +1,49 @@
+service: chrome-serp
+
+package:
+  individually: true
+useDotenv: true
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  memorySize: 2048
+  timeout: 60
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "logs:CreateLogGroup"
+        - "logs:CreateLogStream"
+        - "logs:PutLogEvents"
+      Resource: "*"
+  stage: ${env:NODE_ENV, 'dev'}
+  environment:
+    STAGE: ${env:NODE_ENV, 'dev'}
+    AWS_ACCOUNT_ID: ${env:AWS_ACCOUNT_ID}
+
+functions:
+  scrape:
+    handler: scrape.handler
+    events:
+      - http:
+          path: scrape
+          method: get
+          cors: true
+          request:
+            parameters:
+              querystrings:
+                url: true
+    package:
+      patterns:
+        - '!./**'
+        - 'lambda/**'
+        - 'utils.js'
+    layers:
+      - arn:aws:lambda:us-east-1:764866452798:layer:chrome-aws-lambda:33
+
+plugins:
+  - serverless-offline
+
+
+
+
