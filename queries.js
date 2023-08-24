@@ -8,12 +8,12 @@ const professions = [
 ];
 const emails = ['"@gmail.com"'];
 const countries = [
+  "United States",
   "Canada",
   "Brasil",
   "United Kingdom",
   "Australia",
   "Germany",
-  "United States",
 ];
 const defaultSites = ["site:linkedin.com"];
 
