@@ -82,3 +82,5 @@ Thumbs.db
 
 /.env
 emails.list
+/plugins/2captcha-solver/
+/.serverless/
