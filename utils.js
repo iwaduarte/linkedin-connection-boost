@@ -23,7 +23,4 @@ const stripNameFromText = (text) => {
   return `${firstName} ${secondName}`;
 };
 
-const utils = { hashData, delay, emailRegex, stripNameFromText };
-
-export default utils;
 export { hashData, delay, emailRegex, stripNameFromText };
