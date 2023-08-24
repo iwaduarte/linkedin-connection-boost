@@ -19,7 +19,7 @@ app.use(compression());
 
 // be aware of helmet configurations for you best use case https://helmetjs.github.io/
 app.use(helmet());
-
+app.get("/favicon.ico", (req, res) => res.status(204));
 app.use("/", mainRouter);
 app.use("/users", usersRouter);
 // catch 404 and forward to error handler
