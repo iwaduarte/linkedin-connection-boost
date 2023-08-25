@@ -87,3 +87,5 @@ Thumbs.db
 /scrape/node_modules/
 /scrape/.env
 
+/scrape/layers/chromium-v116.0.0.zip
+/scrape/layers/nodejs/node_modules/
