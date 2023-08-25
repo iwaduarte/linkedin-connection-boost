@@ -1,9 +1,11 @@
-import { delay, emailRegex, stripNameFromText } from "../utils.js";
+import { delay, emailRegex, stripNameFromText } from "./utils.js";
 import { log } from "debug";
+
+const GLOBAL_TIMEOUT = 4000;
 
 const PAGE_RESULT_CLASS = ".v7W49e";
 const NEXT_PAGE_ID = "#pnnext";
-const GLOBAL_TIMEOUT = 4000;
+const LOAD_MORE = ".GNJvt";
 
 const extractEmailsAndNames = (
   pageResultsClass,
@@ -74,7 +76,7 @@ const getEmailsOnPage = async ({
     .click(NEXT_PAGE_ID)
     .then(() => [])
     .catch((e) => {
-      console.log("Page click", e.message);
+      console.log("[pageClick]", e.message);
       return [true];
     });
 
@@ -82,14 +84,14 @@ const getEmailsOnPage = async ({
     .waitForNavigation({ timeout: globalTimeout })
     .catch((err) => console.log("[waitForNavigation]", err));
 
-  if (endOfPage) return emails;
+  if (endOfPage) return newEmails;
 
   if (newStale > 10) {
     console.log(`No results for ${stale} pages. Exiting...`);
-    return emails;
+    return newEmails;
   }
 
-  if (emails?.length < maxData)
+  if (newEmails?.length < maxData)
     return getEmailsOnPage({
       globalTimeout,
       page,
@@ -99,7 +101,7 @@ const getEmailsOnPage = async ({
       stale: newStale,
     });
 
-  return emails;
+  return newEmails;
 };
 
 const queryEmails = async ({ browser, url }) => {
@@ -116,7 +118,6 @@ const queryEmails = async ({ browser, url }) => {
   );
 
   await page.goto(url);
-  await page.waitForNavigation({ timeout: GLOBAL_TIMEOUT });
 
   return getEmailsOnPage({
     page,

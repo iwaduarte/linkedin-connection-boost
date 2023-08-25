@@ -1,0 +1,19 @@
+{
+  "name": "google-serp",
+  "type": "module",
+  "version": "0.0.1",
+  "author": "Iwá Duarte",
+  "license": "unlicensed",
+  "dependencies": {
+    "debug": "^4.3.4",
+    "dotenv": "^16.3.1",
+    "puppeteer-core": "^21.1.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-anonymize-ua": "^2.4.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  },
+  "devDependencies": {
+    "@sparticuz/chromium": "^116.0.0",
+    "serverless-offline": "^12.0.4"
+  }
+}
