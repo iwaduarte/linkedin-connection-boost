@@ -1,0 +1,136 @@
+service: chrome-serp
+
+package:
+  individually: true
+useDotenv: true
+provider:
+  name: aws
+  versionFunctions: false
+  runtime: nodejs18.x
+  region: us-east-1
+  memorySize: 2048
+  timeout: 240
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "logs:CreateLogGroup"
+        - "logs:CreateLogStream"
+        - "logs:PutLogEvents"
+        - sqs:SendMessage
+        - sqs:ReceiveMessage
+        - sqs:DeleteMessage
+        - sqs:GetQueueAttributes
+        - dynamodb:PutItem
+      Resource: "*"
+  stage: ${env:NODE_ENV, 'dev'}
+  environment:
+    STAGE: ${env:NODE_ENV, 'dev'}
+    IS_LOCAL_DEVELOPMENT: ${env:IS_LOCAL_DEVELOPMENT}
+    LOCAL_PATH: ${env:LOCAL_PATH}
+
+functions:
+  scrape:
+    handler: lambda-functions/scrape/scrape.handler
+    events:
+      - sqs:
+          batchSize: 1
+          arn:
+            Fn::GetAtt:
+              - Queue
+              - Arn
+    package:
+      patterns:
+        - '!./**'
+        - 'lambda-functions/scrape/**'
+        - 'package.json'
+
+  queue:
+    handler: lambda-functions/queue/queue.handler
+    events:
+      - http:
+          path: "/"
+          method: GET
+          cors: true
+          request:
+            parameters:
+              querystrings:
+                url: true
+    package:
+      patterns:
+        - '!./**'
+        - 'lambda-functions/queue/**'
+        - 'package.json'
+
+    layers:
+      - !Ref ChromiumLambdaLayer
+      - !Ref DependenciesLambdaLayer
+
+layers:
+  chromium:
+    package:
+      artifact: 'layers/chromium-v116.0.0.zip'
+  dependencies:
+    path: 'layers'
+    package:
+      patterns:
+        - '!chromium-v116.0.0.zip'
+
+plugins:
+  - serverless-offline
+
+resources:
+  Resources:
+    Queue:
+      Type: AWS::SQS::Queue
+
+    EmailTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: Emails
+        AttributeDefinitions:
+          - AttributeName: email
+            AttributeType: S
+        KeySchema:
+          - AttributeName: email
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+    #Domain Name (ie. iwaduarte.dev)
+    DomainName:
+      Type: "AWS::ApiGateway::DomainName"
+      Properties:
+        DomainName: ${env:CUSTOM_DOMAIN_NAME}
+        CertificateArn: ${env:CERTIFICATE_ARN}
+        EndpointConfiguration:
+          Types:
+            - EDGE #PRIVATE or EDGE
+
+    #Base Mappings  (points CustomDomain Name to specific ApiGateway)
+    BasePathMapping:
+      Type: "AWS::ApiGateway::BasePathMapping"
+      Properties:
+        #        BasePath: ${env:BASE_PATH, ''}
+        DomainName:
+          Ref: DomainName
+        RestApiId: { "Ref": "ApiGatewayRestApi" }
+        Stage: ${self:provider.stage}
+
+    # Record Set in route 53
+    RecordSet:
+      Type: AWS::Route53::RecordSet
+      Properties:
+        HostedZoneName: ${env:HOSTED_ZONE_NAME}
+        Name: ${env:CUSTOM_DOMAIN_NAME}
+        Type: A
+        AliasTarget:
+          HostedZoneId:
+            Fn::GetAtt: [ "DomainName", "DistributionHostedZoneId" ]
+          DNSName:
+            Fn::GetAtt: [ "DomainName", "DistributionDomainName" ]
+
+
+
+
+
