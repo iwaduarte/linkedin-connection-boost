@@ -38,5 +38,3 @@ functions:
         - 'node_modules/**'
         - 'package.json'
 
-plugins:
-  - serverless-offline
