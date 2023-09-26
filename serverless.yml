@@ -20,8 +20,8 @@ provider:
   stage: ${env:NODE_ENV, 'dev'}
   environment:
     STAGE: ${env:NODE_ENV, 'dev'}
-    IS_LOCAL_DEVELOPMENT: ${env:IS_LOCAL_DEVELOPMENT}
-    LOCAL_PATH: ${env:LOCAL_PATH}
+    IS_LOCAL_DEVELOPMENT: ${env:IS_LOCAL_DEVELOPMENT, ''}
+    LOCAL_PATH: ${env:LOCAL_PATH, ''}
 
 functions:
   scrape:
