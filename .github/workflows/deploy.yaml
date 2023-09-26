@@ -20,6 +20,7 @@ jobs:
 
       - name: Install production dependencies
         run: |
+          npm install serverless-offline -g
           npm ci --only=production
 
       - name: Deploy using Serverless
