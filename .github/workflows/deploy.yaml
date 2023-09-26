@@ -26,8 +26,5 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          CUSTOM_DOMAIN_NAME: ${{ secrets.CUSTOM_DOMAIN_NAME }}
-          HOSTED_ZONE_NAME: ${{ secrets.HOSTED_ZONE_NAME }}
-          CERTIFICATE_ARN: ${{ secrets.CERTIFICATE_ARN }}
         run: |
           npx serverless deploy
