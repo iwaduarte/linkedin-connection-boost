@@ -10,7 +10,9 @@ puppeteer.use(StealthPlugin());
 puppeteer.use(AnonymizeUA());
 
 const LINKEDIN_URL = "https://linkedin.com";
-const { USER_LOGIN, PASSWORD, IS_LOCAL_DEVELOPMENT, LOCAL_PATH } = process.env;
+const { USER_LOGIN, PASSWORD, IS_LOCAL_DEVELOPMENT, LOCAL_PATH, KEYWORDS } = process.env;
+
+const keywords = KEYWORDS ? encodeURIComponent(KEYWORDS.join(" ")) : "hiring";
 
 const addContacts = async () => {
   const opts =
@@ -43,7 +45,6 @@ const addContacts = async () => {
 
   const [page] = await browser.pages();
 
-  const keywords = "hiring";
   await page.goto(LINKEDIN_URL);
   await page.waitForNavigation({ timeout: 1000 }).catch((err) => err)
   await page.type('#session_key', USER_LOGIN, { delay: 100 })
@@ -52,7 +53,7 @@ const addContacts = async () => {
   await new Promise((r) => setTimeout(r, 2000));
   await page.goto(`https://www.linkedin.com/search/results/people/?keywords=${keywords}&origin=SWITCH_SEARCH_VERTICAL`)
   await page.waitForNavigation({ timeout: 1000 }).catch((err) => err)
-  await page.evaluate(evaluate)
+  await page.evaluate(evaluate);
 
 };
 
