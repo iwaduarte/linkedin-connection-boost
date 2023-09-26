@@ -16,11 +16,6 @@ provider:
         - "logs:CreateLogGroup"
         - "logs:CreateLogStream"
         - "logs:PutLogEvents"
-        - sqs:SendMessage
-        - sqs:ReceiveMessage
-        - sqs:DeleteMessage
-        - sqs:GetQueueAttributes
-        - dynamodb:PutItem
       Resource: "*"
   stage: ${env:NODE_ENV, 'dev'}
   environment:
@@ -30,107 +25,19 @@ provider:
 
 functions:
   scrape:
-    handler: lambda-functions/scrape/scrape.handler
+    handler: puppeteer/scrape.handler
     events:
-      - sqs:
-          batchSize: 1
-          arn:
-            Fn::GetAtt:
-              - Queue
-              - Arn
-    package:
-      patterns:
-        - '!./**'
-        - 'lambda-functions/scrape/**'
-        - 'package.json'
-
-  queue:
-    handler: lambda-functions/queue/queue.handler
-    events:
-      - http:
-          path: "/"
-          method: GET
-          cors: true
-          request:
-            parameters:
-              querystrings:
-                url: true
-    package:
-      patterns:
-        - '!./**'
-        - 'lambda-functions/queue/**'
-        - 'package.json'
+      - schedule: rate(8 days)
 
     layers:
-      - !Ref ChromiumLambdaLayer
-      - !Ref DependenciesLambdaLayer
-
-layers:
-  chromium:
-    package:
-      artifact: 'layers/chromium-v116.0.0.zip'
-  dependencies:
-    path: 'layers'
+      - arn:aws:lambda:us-east-1:764866452798:layer:chrome-aws-lambda:38
     package:
       patterns:
-        - '!chromium-v116.0.0.zip'
+        - '!./**'
+        - 'puppeteer/**'
+        - 'node_modules/**'
+        - 'package.json'
 
 plugins:
   - serverless-offline
-
-resources:
-  Resources:
-    Queue:
-      Type: AWS::SQS::Queue
-
-    EmailTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: Emails
-        AttributeDefinitions:
-          - AttributeName: email
-            AttributeType: S
-        KeySchema:
-          - AttributeName: email
-            KeyType: HASH
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-
-    #Domain Name (ie. iwaduarte.dev)
-    DomainName:
-      Type: "AWS::ApiGateway::DomainName"
-      Properties:
-        DomainName: ${env:CUSTOM_DOMAIN_NAME}
-        CertificateArn: ${env:CERTIFICATE_ARN}
-        EndpointConfiguration:
-          Types:
-            - EDGE #PRIVATE or EDGE
-
-    #Base Mappings  (points CustomDomain Name to specific ApiGateway)
-    BasePathMapping:
-      Type: "AWS::ApiGateway::BasePathMapping"
-      Properties:
-        #        BasePath: ${env:BASE_PATH, ''}
-        DomainName:
-          Ref: DomainName
-        RestApiId: { "Ref": "ApiGatewayRestApi" }
-        Stage: ${self:provider.stage}
-
-    # Record Set in route 53
-    RecordSet:
-      Type: AWS::Route53::RecordSet
-      Properties:
-        HostedZoneName: ${env:HOSTED_ZONE_NAME}
-        Name: ${env:CUSTOM_DOMAIN_NAME}
-        Type: A
-        AliasTarget:
-          HostedZoneId:
-            Fn::GetAtt: [ "DomainName", "DistributionHostedZoneId" ]
-          DNSName:
-            Fn::GetAtt: [ "DomainName", "DistributionDomainName" ]
-
-
-
-
 
