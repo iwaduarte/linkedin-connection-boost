@@ -80,12 +80,5 @@ typings/
 .DS_Store
 Thumbs.db
 
-/server/.env
-/server/node_modules/
-/scrape/plugins/2captcha-solver/
-/scrape/.serverless/
-/scrape/node_modules/
-/scrape/.env
+/.env
 
-/scrape/layers/chromium-v116.0.0.zip
-/scrape/layers/nodejs/

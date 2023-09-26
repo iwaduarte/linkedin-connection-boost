@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "start": "node express/bin/www",
-    "pup": "../node_modules/.bin/nodemon scrape/lambda/index.js",
+    "pup": "nodemon puppeteer/boost.js",
     "update-db": "node express/database/syncDatabase"
   },
   "dependencies": {
