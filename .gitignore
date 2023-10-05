@@ -83,4 +83,4 @@ Thumbs.db
 /.env
 /node_modules
 /.serverless
-
+/user-data/
