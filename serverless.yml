@@ -26,7 +26,7 @@ provider:
 
 functions:
   scrape:
-    handler: puppeteer/scrape.handler
+    handler: puppeteer/boost.addContacts
     events:
       - schedule: rate(8 days)
     layers:
@@ -34,7 +34,7 @@ functions:
       - !Ref NodeModulesLambdaLayer
     package:
       patterns:
-        - '!./**'
+        - '!**'
         - 'puppeteer/**'
         - '../package.json'
 
