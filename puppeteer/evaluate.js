@@ -11,15 +11,13 @@ const evaluate = async () => {
     );
   };
   const findNextBatch = async () => {
-
-    const navigationBar = document
-      .querySelector(
-        "[aria-label=\"Next\"],[aria-label=\"Avançar\"], [aria-label=\"Show more results\"] "
-      );
-
-    if (navigationBar) {
+    if (window.location.href.includes("/search/results/people")) {
       scroll(0, document.body.clientHeight);
-      navigationBar.click();
+      document
+        .querySelector(
+          '[aria-label="Next"],[aria-label="Avançar"], [aria-label="Show more results"] '
+        )
+        ?.click();
       return;
     }
 
@@ -35,8 +33,11 @@ const evaluate = async () => {
   };
 
   const stopOperation = () => clearInterval(configuration.interval);
+  window.stopOperation = stopOperation;
   const interact = () => {
-    document.querySelector('[aria-label="Got it"],[aria-label="Okay"]')?.click();
+    document
+      .querySelector('[aria-label="Got it"],[aria-label="Okay"]')
+      ?.click();
     const titleModal = document.getElementById("send-invite-modal")?.innerText;
     if (
       titleModal?.includes("How do you know") ||
@@ -64,6 +65,7 @@ const evaluate = async () => {
   const connect = async () => {
     const allConnectionsIterator = getAllConnections()[Symbol.iterator]();
     const stopConnect = await new Promise((resolve) => {
+      window.stopPromise = resolve;
       configuration.interval = setInterval(async () => {
         const { value, done } = allConnectionsIterator.next();
         console.log("Connection", value?.innerHTML);
@@ -71,6 +73,8 @@ const evaluate = async () => {
           stopOperation();
           return resolve(false);
         }
+        //check if the click button results in a request to a server
+
         await new Promise((r) => setTimeout(r, 500));
         value.click();
         await new Promise((r) => setTimeout(r, 200));
@@ -89,8 +93,7 @@ const evaluate = async () => {
     return connect();
   };
 
-  await connect()
+  await connect();
+};
 
-}
-
-export { evaluate }
+export { evaluate };
