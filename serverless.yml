@@ -2,6 +2,7 @@ service: chrome-serp
 
 package:
   individually: true
+  excludeDevDependencies: true
 useDotenv: true
 provider:
   name: aws
@@ -28,13 +29,27 @@ functions:
     handler: puppeteer/scrape.handler
     events:
       - schedule: rate(8 days)
-
     layers:
       - arn:aws:lambda:us-east-1:764866452798:layer:chrome-aws-lambda:38
+      - !Ref NodeModulesLambdaLayer
     package:
       patterns:
         - '!./**'
         - 'puppeteer/**'
-        - 'node_modules/**'
-        - 'package.json'
+        - '../package.json'
+
+layers:
+  nodeModules:
+    path: node_modules
+    description: Node.js modules for my service
+
+
+custom:
+  serverless-layer-organizer:
+    layers:
+      nodeModules:
+        pathPrefix: nodejs
+
+plugins:
+  - serverless-layer-organizer
 
