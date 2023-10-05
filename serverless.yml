@@ -1,4 +1,4 @@
-service: chrome-serp
+service: linkedin-connection-boost
 
 package:
   individually: true
