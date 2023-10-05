@@ -23,6 +23,8 @@ provider:
     STAGE: ${env:NODE_ENV, 'dev'}
     IS_LOCAL_DEVELOPMENT: ${env:IS_LOCAL_DEVELOPMENT, ''}
     LOCAL_PATH: ${env:LOCAL_PATH, ''}
+    USER_LOGIN: ${env:USER_LOGIN, ''}
+    PASSWORD: ${env:PASSWORD, ''}
 
 functions:
   scrape:
@@ -36,7 +38,7 @@ functions:
       patterns:
         - '!**'
         - 'puppeteer/**'
-        - '../package.json'
+        - './package.json'
 
 layers:
   nodeModules:
