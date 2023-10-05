@@ -20,8 +20,8 @@ jobs:
 
       - name: Install production dependencies
         run: |
-          npm ci --only=production
           npm install -g serverless-layer-organizer
+          npm ci --only=production
 
       - name: Deploy using Serverless
         env:
