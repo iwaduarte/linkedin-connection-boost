@@ -57,4 +57,3 @@ const addContacts = async () => {
 
 };
 
-await addContacts();
