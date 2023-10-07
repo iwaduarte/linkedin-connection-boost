@@ -11,13 +11,13 @@
     "dotenv": "16.0.3",
     "puppeteer-extra": "^3.3.4",
     "puppeteer-extra-plugin-adblocker": "^2.13.5",
-    "puppeteer-extra-plugin-anonymize-ua": "^2.4.4",
     "puppeteer-extra-plugin-stealth": "^2.11.1"
   },
   "devDependencies": {
     "@sparticuz/chromium": "^116.0.0",
     "nodemon": "^2.0.20",
     "prettier": "^2.7.1",
-    "puppeteer": "^21.1.0"
+    "puppeteer": "^21.1.0",
+    "serverless-layer-organizer": "^1.0.0"
   }
 }
