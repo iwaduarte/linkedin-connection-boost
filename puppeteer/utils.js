@@ -1,9 +1,8 @@
 import dotenv from "dotenv";
+dotenv.config();
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import chromium from "@sparticuz/chromium";
-
-dotenv.config();
 
 const { IS_LOCAL_DEVELOPMENT, LOCAL_PATH } = process.env;
 
@@ -13,13 +12,15 @@ const opts =
   IS_LOCAL_DEVELOPMENT === "true"
     ? {
         // headless: false,
-        headless: true, //old headless
-        // headless: new, //new headless
+        // headless: true, //old headless
+        headless: "new", //new headless
         executablePath: LOCAL_PATH,
         args: [
           "--disable-web-security",
           "--disable-features=IsolateOrigins,site-per-process",
           "--user-agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36'",
+          "--use-fake-device-for-media-stream",
+          "--use-fake-ui-for-media-stream",
         ],
       }
     : {
@@ -57,6 +58,7 @@ const takeScreenshot = async (page, fullPage = false) => {
   const screenshot = await page.screenshot({
     path,
     encoding,
+    fullPage: true,
   });
 
   !IS_LOCAL_DEVELOPMENT && console.log("screenshot", screenshot);
@@ -64,13 +66,17 @@ const takeScreenshot = async (page, fullPage = false) => {
 
 const botDetection = async (page) => {
   await page.goto("https://bot.sannysoft.com/", { waitUntil: "networkidle2" });
+  await takeScreenshot(page, true);
+  await page.goto("https://antoinevastel.com/bots", {
+    waitUntil: "networkidle2",
+  });
   return takeScreenshot(page, true);
 };
 
 const initBrowser = () =>
   puppeteer.launch({
     ignoreHTTPSErrors: true,
-    ...(IS_LOCAL_DEVELOPMENT === "true" ? { userDataDir: "./user-data" } : {}),
+    // ...(IS_LOCAL_DEVELOPMENT === "true" ? { userDataDir: "./user-data" } : {}),
     ...opts,
     // Fix protocol timed out see: https://github.com/puppeteer/puppeteer/issues/9927
     protocolTimeout: 0,
