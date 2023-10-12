@@ -1,26 +1,42 @@
 import dotenv from "dotenv";
-dotenv.config();
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
+import RecaptchaPlugin from "puppeteer-extra-plugin-recaptcha";
+import { newInjectedPage } from "fingerprint-injector";
 import chromium from "@sparticuz/chromium";
+import readlinePromises from "node:readline/promises";
 
-const { IS_LOCAL_DEVELOPMENT, LOCAL_PATH } = process.env;
+dotenv.config();
+
+const { IS_LOCAL_DEVELOPMENT, LOCAL_PATH, CAPTCHA_API_TOKEN } = process.env;
 
 puppeteer.use(StealthPlugin());
+puppeteer.use(
+  RecaptchaPlugin({
+    provider: {
+      id: "2captcha",
+      token: CAPTCHA_API_TOKEN,
+    },
+    visualFeedback: true,
+  })
+);
+
+const rl = readlinePromises.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
 
 const opts =
   IS_LOCAL_DEVELOPMENT === "true"
     ? {
-        // headless: false,
+        headless: false,
         // headless: true, //old headless
-        headless: "new", //new headless
+        // headless: "new", //new headless
         executablePath: LOCAL_PATH,
         args: [
           "--disable-web-security",
           "--disable-features=IsolateOrigins,site-per-process",
           "--user-agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36'",
-          "--use-fake-device-for-media-stream",
-          "--use-fake-ui-for-media-stream",
         ],
       }
     : {
@@ -58,23 +74,43 @@ const takeScreenshot = async (page, fullPage = false) => {
   const screenshot = await page.screenshot({
     path,
     encoding,
-    fullPage: true,
+    fullPage,
   });
 
   !IS_LOCAL_DEVELOPMENT && console.log("screenshot", screenshot);
 };
 
-const botDetection = async (page) => {
-  await page.goto("https://bot.sannysoft.com/", { waitUntil: "networkidle2" });
-  await takeScreenshot(page, true);
-  await page.goto("https://antoinevastel.com/bots", {
-    waitUntil: "networkidle2",
-  });
-  return takeScreenshot(page, true);
+const readConsole = (question = "") => {
+  return rl.question(question);
 };
 
-const initBrowser = () =>
-  puppeteer.launch({
+const botDetection = async (browser, urls = []) => {
+  const newUrls = urls.length
+    ? urls
+    : [
+        "https://bot.sannysoft.com/",
+        "https://antoinevastel.com/bots",
+        "https://abrahamjuliot.github.io/creepjs/",
+      ];
+
+  await Promise.all(
+    newUrls.map(async (url) => {
+      const page = await browser.newPage();
+      await page.goto(url, {
+        waitUntil: "networkidle2",
+      });
+      return takeScreenshot(page, true);
+    })
+  );
+};
+
+const resolveCaptcha = async (page) => {
+  console.log("Captcha Required");
+  await page.solveRecaptchas();
+};
+
+const initBrowser = async () => {
+  const stealthBrowser = await puppeteer.launch({
     ignoreHTTPSErrors: true,
     // ...(IS_LOCAL_DEVELOPMENT === "true" ? { userDataDir: "./user-data" } : {}),
     ...opts,
@@ -82,4 +118,21 @@ const initBrowser = () =>
     protocolTimeout: 0,
   });
 
-export { initBrowser, botDetection, takeScreenshot };
+  return new Proxy(stealthBrowser, {
+    get: (target, key) => {
+      if (key === "newPage") {
+        return () => newInjectedPage(stealthBrowser);
+      }
+
+      return target[key];
+    },
+  });
+};
+
+export {
+  initBrowser,
+  botDetection,
+  takeScreenshot,
+  readConsole,
+  resolveCaptcha,
+};
