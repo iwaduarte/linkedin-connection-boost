@@ -29,9 +29,9 @@ const rl = readlinePromises.createInterface({
 const opts =
   IS_LOCAL_DEVELOPMENT === "true"
     ? {
-        headless: false,
+        // headless: false,
         // headless: true, //old headless
-        // headless: "new", //new headless
+        headless: "new", //new headless
         executablePath: LOCAL_PATH,
         args: [
           "--disable-web-security",
