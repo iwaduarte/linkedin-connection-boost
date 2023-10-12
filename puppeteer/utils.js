@@ -26,33 +26,18 @@ const rl = readlinePromises.createInterface({
   output: process.stdout,
 });
 
-const opts =
-  IS_LOCAL_DEVELOPMENT === "true"
-    ? {
-        // headless: false,
-        // headless: true, //old headless
-        headless: "new", //new headless
-        executablePath: LOCAL_PATH,
-        args: [
-          "--disable-web-security",
-          "--disable-features=IsolateOrigins,site-per-process",
-          "--user-agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36'",
-        ],
-      }
-    : {
-        headless: "new",
-        defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath(),
-        args: [
-          "--disable-web-security",
-          "--disable-features=IsolateOrigins,site-per-process",
-          // `--disable-extensions-except=${pathToExtension}`,
-          // `--load-extension=${pathToExtension}`,
-          ...chromium.args.filter((arg) => !arg.includes("headless")),
-          "--headless=new",
-          "--user-agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36'",
-        ],
-      };
+const opts = {
+  headless: false,
+  // headless: true, //old headless
+  // headless: "new", //new headless
+  executablePath: LOCAL_PATH ? LOCAL_PATH : await chromium.executablePath(),
+  args: [
+    "--disable-web-security",
+    "--disable-features=IsolateOrigins,site-per-process",
+    ...(LOCAL_PATH ? [] : chromium.args),
+    "--user-agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36'",
+  ],
+};
 
 await fetch("https://checkip.amazonaws.com/")
   .then((response) => response.text())
@@ -81,6 +66,9 @@ const takeScreenshot = async (page, fullPage = false) => {
 };
 
 const readConsole = (question = "") => {
+  if (!IS_LOCAL_DEVELOPMENT)
+    throw Error("Readline not implemented in lambda context");
+
   return rl.question(question);
 };
 
