@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "dotenv": "16.0.3",
+    "fingerprint-injector": "^2.1.42",
     "puppeteer-extra": "^3.3.4",
     "puppeteer-extra-plugin-adblocker": "^2.13.5",
     "puppeteer-extra-plugin-recaptcha": "^3.6.8",
