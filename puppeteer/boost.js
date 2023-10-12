@@ -1,5 +1,11 @@
 import { evaluate } from "./evaluate.js";
-import { botDetection, initBrowser, takeScreenshot } from "./utils.js";
+import {
+  botDetection,
+  initBrowser,
+  readConsole,
+  resolveCaptcha,
+  takeScreenshot,
+} from "./utils.js";
 
 const { USER_LOGIN, PASSWORD, IS_LOCAL_DEVELOPMENT, KEYWORDS } = process.env;
 
@@ -26,6 +32,7 @@ const login = async (page) => {
   await page.type("#session_key", USER_LOGIN, { delay: 100 });
   await page.type("#session_password", PASSWORD, { delay: 100 });
   await page.click('button[type="submit"]');
+  await page.waitForNavigation();
   await takeScreenshot(page);
   await new Promise((r) => setTimeout(r, 2000));
 };
@@ -34,9 +41,11 @@ const addContacts = async () => {
   // browser.pages() doesn't work for avoid bot detection
   // See: https://github.com/puppeteer/puppeteer/issues/2669
   // Full reference: https://github.com/berstend/puppeteer-extra/blob/39248f1f5deeb21b1e7eb6ae07b8ef73f1231ab9/packages/puppeteer-extra/src/index.ts#L234
+
+  await botDetection(browser);
+
   const page = await browser.newPage();
   await page.setBypassCSP(true);
-  await botDetection(page);
 
   let postRequestCount = 0;
   page.on("request", async (request) => {
@@ -54,9 +63,29 @@ const addContacts = async () => {
       }
     }
   });
-
   await login(page);
+
+  if (page.url().includes("www.linkedin.com/checkpoint/challenge/")) {
+    const typeOfChallenge = (await page.evaluate(
+      () =>
+        document.querySelector("#app__container > main > h1").textContent ===
+        "Let's do a quick security check"
+    ))
+      ? "SECURITY"
+      : "PIN";
+
+    if (typeOfChallenge === "SECURITY") await resolveCaptcha(page);
+    else {
+      const PIN = await readConsole("Page is asking for the pin");
+      await page.type("input.input_verification_pin", PIN, {
+        delay: 120,
+      });
+      await page.click('button[type="submit"]');
+    }
+  }
+
   await page.goto(SEARCH_URL, { waitUntil: "networkidle2" });
+
   await page.waitForNavigation({ timeout: 1000 }).catch((err) => err);
 
   if (!page.url().includes(RESULTS_URL)) {
